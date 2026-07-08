@@ -1,4 +1,4 @@
-using NSubstitute;
+using Moq;
 using WMARS.Models;
 using WMARS.Observers;
 
@@ -13,38 +13,38 @@ public class WeatherStationTests
     [Fact]
     public void Publish_Notifies_All_Subscribed_Observers()
     {
-        var first = Substitute.For<IWeatherObserver>();
-        var second = Substitute.For<IWeatherObserver>();
-        _station.Subscribe(first);
-        _station.Subscribe(second);
+        var first = new Mock<IWeatherObserver>();
+        var second = new Mock<IWeatherObserver>();
+        _station.Subscribe(first.Object);
+        _station.Subscribe(second.Object);
 
         _station.Publish(Sample);
 
-        first.Received(1).OnWeatherUpdate(Sample);
-        second.Received(1).OnWeatherUpdate(Sample);
+        first.Verify(o => o.OnWeatherUpdate(Sample), Times.Once);
+        second.Verify(o => o.OnWeatherUpdate(Sample), Times.Once);
     }
 
     [Fact]
     public void Unsubscribe_Stops_Further_Notifications()
     {
-        var observer = Substitute.For<IWeatherObserver>();
-        _station.Subscribe(observer);
-        _station.Unsubscribe(observer);
+        var observer = new Mock<IWeatherObserver>();
+        _station.Subscribe(observer.Object);
+        _station.Unsubscribe(observer.Object);
 
         _station.Publish(Sample);
 
-        observer.DidNotReceive().OnWeatherUpdate(Arg.Any<WeatherData>());
+        observer.Verify(o => o.OnWeatherUpdate(It.IsAny<WeatherData>()), Times.Never);
     }
 
     [Fact]
     public void Subscribing_The_Same_Observer_Twice_Notifies_It_Once()
     {
-        var observer = Substitute.For<IWeatherObserver>();
-        _station.Subscribe(observer);
-        _station.Subscribe(observer);
+        var observer = new Mock<IWeatherObserver>();
+        _station.Subscribe(observer.Object);
+        _station.Subscribe(observer.Object);
 
         _station.Publish(Sample);
 
-        observer.Received(1).OnWeatherUpdate(Sample);
+        observer.Verify(o => o.OnWeatherUpdate(Sample), Times.Once);
     }
 }

@@ -1,4 +1,4 @@
-using NSubstitute;
+using Moq;
 using WMARS.Parsing;
 
 namespace WMARS.Tests.Parsing;
@@ -41,11 +41,11 @@ public class WeatherDataParserResolverTests
     [Fact]
     public void SupportedFormats_Aggregates_All_Parsers_And_Deduplicates_Case_Insensitively()
     {
-        var first = Substitute.For<IWeatherDataParser>();
-        first.SupportedFormats.Returns(["json", "geojson"]);
-        var second = Substitute.For<IWeatherDataParser>();
-        second.SupportedFormats.Returns(["JSON", "xml"]);
-        var resolver = new WeatherDataParserResolver([first, second]);
+        var first = new Mock<IWeatherDataParser>();
+        first.Setup(p => p.SupportedFormats).Returns(["json", "geojson"]);
+        var second = new Mock<IWeatherDataParser>();
+        second.Setup(p => p.SupportedFormats).Returns(["JSON", "xml"]);
+        var resolver = new WeatherDataParserResolver([first.Object, second.Object]);
 
         var formats = resolver.SupportedFormats.ToList();
 
