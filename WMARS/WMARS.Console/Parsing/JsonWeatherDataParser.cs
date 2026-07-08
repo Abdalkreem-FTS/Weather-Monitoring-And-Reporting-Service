@@ -1,5 +1,6 @@
 using System.Text.Json;
 using WMARS.Models;
+using WMARS.Results;
 
 namespace WMARS.Parsing;
 
@@ -15,19 +16,21 @@ public sealed class JsonWeatherDataParser : IWeatherDataParser
 
     public IReadOnlyCollection<string> SupportedFormats { get; } = ["json"];
 
-    public WeatherData Parse(string content)
+    public Result<WeatherData> Parse(string content)
     {
         WeatherDataDto? dto;
         try
         {
             dto = JsonSerializer.Deserialize<WeatherDataDto>(content, Options);
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new FormatException("The JSON content is not well-formed.", ex);
+            return Error.Validation("Parser.Json.Malformed", "The JSON content is not well-formed.");
         }
 
-        return dto is null ? throw new FormatException("The JSON content is empty.") : dto.ToWeatherData();
+        return dto is null
+            ? Error.Validation("Parser.Json.Empty", "The JSON content is empty.")
+            : dto.ToWeatherData();
     }
 
     /// <summary>
@@ -39,19 +42,21 @@ public sealed class JsonWeatherDataParser : IWeatherDataParser
         public double? Temperature { get; init; }
         public double? Humidity { get; init; }
 
-        public WeatherData ToWeatherData()
+        public Result<WeatherData> ToWeatherData()
         {
             if (string.IsNullOrWhiteSpace(Location))
             {
-                throw new FormatException("Missing required field: Location.");
+                return Error.Validation("WeatherData.Location", "Missing required field: Location.");
             }
-            
+
             if (Temperature is null)
             {
-                throw new FormatException("Missing required field: Temperature.");
+                return Error.Validation("WeatherData.Temperature", "Missing required field: Temperature.");
             }
-            
-            return Humidity is null ? throw new FormatException("Missing required field: Humidity.") : new WeatherData(Location, Temperature.Value, Humidity.Value);
+
+            return Humidity is null
+                ? Error.Validation("WeatherData.Humidity", "Missing required field: Humidity.")
+                : new WeatherData(Location, Temperature.Value, Humidity.Value);
         }
     }
 }

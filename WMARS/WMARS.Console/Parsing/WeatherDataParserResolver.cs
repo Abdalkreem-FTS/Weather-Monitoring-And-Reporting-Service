@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+using WMARS.Results;
 
 namespace WMARS.Parsing;
 
@@ -15,12 +15,23 @@ public sealed class WeatherDataParserResolver(IEnumerable<IWeatherDataParser> pa
     public IEnumerable<string> SupportedFormats => _parsers.SelectMany(parser => parser.SupportedFormats).Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Finds the parser that handles <paramref name="format"/> (case-insensitive).
+    /// Finds the parser that handles <paramref name="format"/> (case-insensitive),
+    /// or a failed <see cref="Result{IWeatherDataParser}"/> describing the
+    /// unsupported format when none is registered.
     /// </summary>
-    public bool TryResolve(string format, [MaybeNullWhen(false)] out IWeatherDataParser parser)
+    public Result<IWeatherDataParser> Resolve(string format)
     {
-        parser = _parsers.FirstOrDefault(p => p.SupportedFormats.Contains(format, StringComparer.OrdinalIgnoreCase));
+        var parser = _parsers.FirstOrDefault(p => p.SupportedFormats.Contains(format, StringComparer.OrdinalIgnoreCase));
 
-        return parser is not null;
+        if (parser is not null)
+        {
+            return Result<IWeatherDataParser>.From(parser);
+        }
+        
+        var supported = string.Join(", ", SupportedFormats.Select(f => "." + f));
+        return Error.NotFound(
+            "Parser.UnsupportedFormat",
+            $"Unsupported format '.{format}'. Supported formats: {supported}.");
+
     }
 }

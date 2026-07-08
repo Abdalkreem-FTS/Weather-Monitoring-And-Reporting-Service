@@ -1,4 +1,5 @@
 using WMARS.Models;
+using WMARS.Results;
 
 namespace WMARS.Parsing;
 
@@ -16,8 +17,8 @@ public interface IWeatherDataParser
 
     /// <summary>
     /// Parses the full file content into a <see cref="WeatherData"/> instance.
-    /// Throws <see cref="FormatException"/> when the content is malformed or
-    /// missing required fields.
+    /// Returns a failed <see cref="Result{WeatherData}"/> carrying a validation
+    /// <see cref="Error"/> when the content is malformed or missing required fields.
     /// </summary>
-    WeatherData Parse(string content);
+    Result<WeatherData> Parse(string content);
 }

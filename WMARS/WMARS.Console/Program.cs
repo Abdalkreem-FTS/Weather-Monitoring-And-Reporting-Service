@@ -17,17 +17,15 @@ catch
     // Some redirected/legacy consoles reject this; safe to ignore.
 }
 
-IReadOnlyDictionary<string, BotConfiguration> configuration;
-try
+var configurationPath = Path.Combine(AppContext.BaseDirectory, "bots.json");
+var configurationResult = await ConfigurationLoader.Load(configurationPath);
+if (configurationResult.IsError)
 {
-    var configurationPath = Path.Combine(AppContext.BaseDirectory, "bots.json");
-    configuration = await ConfigurationLoader.Load(configurationPath);
-}
-catch (Exception ex)
-{
-    AnsiConsole.MarkupLine($"[red]Failed to load configuration:[/] {Markup.Escape(ex.Message)}");
+    AnsiConsole.MarkupLine($"[red]Failed to load configuration:[/] {Markup.Escape(configurationResult.TopError.Description)}");
     return;
 }
+
+var configuration = configurationResult.Value;
 
 var services = new ServiceCollection();
 

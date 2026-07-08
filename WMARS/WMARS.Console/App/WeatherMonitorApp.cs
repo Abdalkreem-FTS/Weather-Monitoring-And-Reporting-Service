@@ -3,6 +3,7 @@ using WMARS.Models;
 using WMARS.Observers;
 using WMARS.Parsing;
 using WMARS.Reporting;
+using WMARS.Results;
 
 namespace WMARS.App;
 
@@ -48,42 +49,58 @@ public sealed class WeatherMonitorApp(
                 continue;
             }
 
-            try
+            var result = ReadWeatherData(input);
+            if (result.IsError)
             {
-                var data = ReadWeatherData(input);
-                ui.ShowReceived(data);
-                station.Publish(data);
+                ui.ShowError(result.TopError.Description);
+                continue;
             }
-            catch (Exception ex)
-            {
-                ui.ShowError(ex.Message);
-            }
+
+            ui.ShowReceived(result.Value);
+            station.Publish(result.Value);
         }
 
         ui.ShowGoodbye();
     }
 
-    private WeatherData ReadWeatherData(string path)
+    private Result<WeatherData> ReadWeatherData(string path)
     {
         var resolvedPath = ResolvePath(path);
+        if (resolvedPath.IsError)
+        {
+            return resolvedPath.Errors;
+        }
 
-        var extension = Path.GetExtension(resolvedPath).TrimStart('.');
+        var extension = Path.GetExtension(resolvedPath.Value).TrimStart('.');
         if (extension.Length == 0)
         {
-            throw new FormatException("The file has no extension, so its format cannot be determined.");
+            return Error.Validation(
+                "File.NoExtension",
+                "The file has no extension, so its format cannot be determined.");
         }
 
-        if (!resolver.TryResolve(extension, out var parser))
+        var parser = resolver.Resolve(extension);
+        if (parser.IsError)
         {
-            var supported = string.Join(", ", resolver.SupportedFormats.Select(f => "." + f));
-            throw new NotSupportedException($"Unsupported format '.{extension}'. Supported formats: {supported}.");
+            return parser.Errors;
         }
 
-        var content = File.ReadAllText(resolvedPath);
-        return string.IsNullOrWhiteSpace(content) ? throw new FormatException("The file is empty.") : parser.Parse(content);
+        string content;
+        try
+        {
+            content = File.ReadAllText(resolvedPath.Value);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return Error.Failure("File.ReadError", $"Could not read the file: {ex.Message}");
+        }
+
+        return string.IsNullOrWhiteSpace(content)
+            ? Error.Validation("File.Empty", "The file is empty.")
+            : parser.Value.Parse(content);
     }
 
-    private static string ResolvePath(string path)
+    private static Result<string> ResolvePath(string path)
     {
         if (File.Exists(path))
         {
@@ -92,6 +109,8 @@ public sealed class WeatherMonitorApp(
 
         var baseRelative = Path.Combine(AppContext.BaseDirectory, path);
 
-        return File.Exists(baseRelative) ? baseRelative : throw new FileNotFoundException($"File not found: {path}");
+        return File.Exists(baseRelative)
+            ? baseRelative
+            : Error.NotFound("File.NotFound", $"File not found: {path}");
     }
 }

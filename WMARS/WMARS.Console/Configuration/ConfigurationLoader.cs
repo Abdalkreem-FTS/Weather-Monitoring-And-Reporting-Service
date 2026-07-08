@@ -1,4 +1,5 @@
 using System.Text.Json;
+using WMARS.Results;
 
 namespace WMARS.Configuration;
 
@@ -12,25 +13,38 @@ public static class ConfigurationLoader
         PropertyNameCaseInsensitive = true
     };
 
-    public static async Task<IReadOnlyDictionary<string, BotConfiguration>> Load(string path)
+    public static async Task<Result<IReadOnlyDictionary<string, BotConfiguration>>> Load(string path)
     {
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException($"Configuration file not found: {path}");
+            return Error.NotFound("Configuration.NotFound", $"Configuration file not found: {path}");
         }
 
-        var json = await File.ReadAllTextAsync(path);
+        string json;
+        try
+        {
+            json = await File.ReadAllTextAsync(path);
+        }
+        catch (IOException ex)
+        {
+            return Error.Failure("Configuration.ReadError", $"Could not read the configuration file: {ex.Message}");
+        }
 
         Dictionary<string, BotConfiguration>? configuration;
         try
         {
             configuration = JsonSerializer.Deserialize<Dictionary<string, BotConfiguration>>(json, Options);
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new FormatException("The configuration file is not valid JSON.", ex);
+            return Error.Validation("Configuration.InvalidJson", "The configuration file is not valid JSON.");
         }
 
-        return configuration ?? throw new FormatException("The configuration file is empty.");
+        if (configuration is null)
+        {
+            return Error.Validation("Configuration.Empty", "The configuration file is empty.");
+        }
+
+        return Result<IReadOnlyDictionary<string, BotConfiguration>>.From(configuration);
     }
 }

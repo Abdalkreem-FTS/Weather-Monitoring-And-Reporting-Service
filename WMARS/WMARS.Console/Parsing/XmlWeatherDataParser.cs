@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
 using WMARS.Models;
+using WMARS.Results;
 
 namespace WMARS.Parsing;
 
@@ -12,40 +13,71 @@ public sealed class XmlWeatherDataParser : IWeatherDataParser
 {
     public IReadOnlyCollection<string> SupportedFormats { get; } = ["xml"];
 
-    public WeatherData Parse(string content)
+    public Result<WeatherData> Parse(string content)
     {
         XDocument document;
         try
         {
             document = XDocument.Parse(content);
         }
-        catch (XmlException ex)
+        catch (XmlException)
         {
-            throw new FormatException("The XML content is not well-formed.", ex);
+            return Error.Validation("Parser.Xml.Malformed", "The XML content is not well-formed.");
         }
 
-        var root = document.Root ?? throw new FormatException("The XML content has no root element.");
+        if (document.Root is not { } root)
+        {
+            return Error.Validation("Parser.Xml.NoRoot", "The XML content has no root element.");
+        }
 
         var location = GetRequired(root, "Location");
-        var temperature = ParseNumber(GetRequired(root, "Temperature"), "Temperature");
-        var humidity = ParseNumber(GetRequired(root, "Humidity"), "Humidity");
+        if (location.IsError)
+        {
+            return location.Errors;
+        }
 
-        return new WeatherData(location, temperature, humidity);
+        var temperatureText = GetRequired(root, "Temperature");
+        if (temperatureText.IsError)
+        {
+            return temperatureText.Errors;
+        }
+
+        var temperature = ParseNumber(temperatureText.Value, "Temperature");
+        if (temperature.IsError)
+        {
+            return temperature.Errors;
+        }
+
+        var humidityText = GetRequired(root, "Humidity");
+        if (humidityText.IsError)
+        {
+            return humidityText.Errors;
+        }
+
+        var humidity = ParseNumber(humidityText.Value, "Humidity");
+        if (humidity.IsError)
+        {
+            return humidity.Errors;
+        }
+
+        return new WeatherData(location.Value, temperature.Value, humidity.Value);
     }
 
-    private static string GetRequired(XElement root, string name)
+    private static Result<string> GetRequired(XElement root, string name)
     {
         var element = root.Element(name);
         if (element is null || string.IsNullOrWhiteSpace(element.Value))
         {
-            throw new FormatException($"Missing required element: {name}.");
+            return Error.Validation("Parser.Xml.MissingElement", $"Missing required element: {name}.");
         }
 
         return element.Value.Trim();
     }
 
-    private static double ParseNumber(string value, string name)
+    private static Result<double> ParseNumber(string value, string name)
     {
-        return !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ? throw new FormatException($"Element '{name}' is not a valid number: '{value}'.") : result;
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : Error.Validation("Parser.Xml.InvalidNumber", $"Element '{name}' is not a valid number: '{value}'.");
     }
 }
