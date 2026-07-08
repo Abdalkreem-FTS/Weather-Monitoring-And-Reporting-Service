@@ -16,7 +16,8 @@ public class JsonWeatherDataParserTests
     {
         var result = _parser.Parse("""{ "Location": "Amman", "Temperature": 23.5, "Humidity": 85 }""");
 
-        Assert.Equal(new WeatherData("Amman", 23.5, 85), result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new WeatherData("Amman", 23.5, 85), result.Value);
     }
 
     [Fact]
@@ -24,23 +25,29 @@ public class JsonWeatherDataParserTests
     {
         var result = _parser.Parse("""{ "location": "Cairo", "temperature": 40, "humidity": 20 }""");
 
-        Assert.Equal(new WeatherData("Cairo", 40, 20), result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new WeatherData("Cairo", 40, 20), result.Value);
     }
 
     [Fact]
-    public void Parse_Malformed_Json_Throws_FormatException()
+    public void Parse_Malformed_Json_Returns_Validation_Error()
     {
-        var ex = Assert.Throws<FormatException>(() => _parser.Parse("{ not valid"));
-        Assert.Contains("well-formed", ex.Message);
+        var result = _parser.Parse("{ not valid");
+
+        Assert.True(result.IsError);
+        Assert.Equal(ErrorType.Validation, result.TopError.Type);
+        Assert.Contains("well-formed", result.TopError.Description);
     }
 
     [Theory]
     [InlineData("""{ "Temperature": 10, "Humidity": 50 }""", "Location")]
     [InlineData("""{ "Location": "X", "Humidity": 50 }""", "Temperature")]
     [InlineData("""{ "Location": "X", "Temperature": 10 }""", "Humidity")]
-    public void Parse_Missing_Field_Throws_With_Field_Name(string json, string field)
+    public void Parse_Missing_Field_Returns_Error_With_Field_Name(string json, string field)
     {
-        var ex = Assert.Throws<FormatException>(() => _parser.Parse(json));
-        Assert.Contains(field, ex.Message);
+        var result = _parser.Parse(json);
+
+        Assert.True(result.IsError);
+        Assert.Contains(field, result.TopError.Description);
     }
 }

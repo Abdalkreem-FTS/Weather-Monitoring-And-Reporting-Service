@@ -14,8 +14,11 @@ public class ConfigurationLoaderTests
         var path = await WriteTempAsync(json);
         try
         {
-            var config = await ConfigurationLoader.Load(path);
+            var result = await ConfigurationLoader.Load(path);
 
+            Assert.True(result.IsSuccess);
+
+            var config = result.Value;
             Assert.True(config["RainBot"].Enabled);
             Assert.Equal(70d, config["RainBot"].HumidityThreshold);
             Assert.Equal("pour", config["RainBot"].Message);
@@ -30,20 +33,26 @@ public class ConfigurationLoaderTests
     }
 
     [Fact]
-    public async Task Load_Missing_File_Throws_FileNotFoundException()
+    public async Task Load_Missing_File_Returns_NotFound_Error()
     {
         var path = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.json");
 
-        await Assert.ThrowsAsync<FileNotFoundException>(() => ConfigurationLoader.Load(path));
+        var result = await ConfigurationLoader.Load(path);
+
+        Assert.True(result.IsError);
+        Assert.Equal(ErrorType.NotFound, result.TopError.Type);
     }
 
     [Fact]
-    public async Task Load_Invalid_Json_Throws_FormatException()
+    public async Task Load_Invalid_Json_Returns_Validation_Error()
     {
         var path = await WriteTempAsync("{ not valid json");
         try
         {
-            await Assert.ThrowsAsync<FormatException>(() => ConfigurationLoader.Load(path));
+            var result = await ConfigurationLoader.Load(path);
+
+            Assert.True(result.IsError);
+            Assert.Equal(ErrorType.Validation, result.TopError.Type);
         }
         finally
         {
@@ -54,9 +63,9 @@ public class ConfigurationLoaderTests
     private static async Task<string> WriteTempAsync(string content)
     {
         var path = Path.Combine(Path.GetTempPath(), $"bots-{Guid.NewGuid():N}.json");
-        
+
         await File.WriteAllTextAsync(path, content);
-        
+
         return path;
     }
 }

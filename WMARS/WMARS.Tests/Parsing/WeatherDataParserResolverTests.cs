@@ -5,32 +5,37 @@ namespace WMARS.Tests.Parsing;
 
 public class WeatherDataParserResolverTests
 {
-    private readonly WeatherDataParserResolver _resolver =
-        new([new JsonWeatherDataParser(), new XmlWeatherDataParser()]);
+    private readonly WeatherDataParserResolver _resolver = new([new JsonWeatherDataParser(), new XmlWeatherDataParser()]);
 
     [Theory]
     [InlineData("json")]
     [InlineData("JSON")]
     [InlineData("xml")]
     [InlineData("XML")]
-    public void TryResolve_Known_Format_Is_Case_Insensitive(string format)
+    public void Resolve_Known_Format_Is_Case_Insensitive(string format)
     {
-        Assert.True(_resolver.TryResolve(format, out var parser));
-        Assert.NotNull(parser);
+        var result = _resolver.Resolve(format);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
     }
 
     [Fact]
-    public void TryResolve_Unknown_Format_Returns_False_And_Null()
+    public void Resolve_Unknown_Format_Returns_NotFound_Error()
     {
-        Assert.False(_resolver.TryResolve("csv", out var parser));
-        Assert.Null(parser);
+        var result = _resolver.Resolve("csv");
+
+        Assert.True(result.IsError);
+        Assert.Equal(ErrorType.NotFound, result.TopError.Type);
     }
 
     [Fact]
-    public void TryResolve_Selects_The_Parser_That_Supports_The_Format()
+    public void Resolve_Selects_The_Parser_That_Supports_The_Format()
     {
-        _resolver.TryResolve("xml", out var parser);
-        Assert.IsType<XmlWeatherDataParser>(parser);
+        var result = _resolver.Resolve("xml");
+
+        Assert.True(result.IsSuccess);
+        Assert.IsType<XmlWeatherDataParser>(result.Value);
     }
 
     [Fact]
