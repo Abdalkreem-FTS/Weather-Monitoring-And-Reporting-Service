@@ -16,8 +16,8 @@ public class WeatherDataParserResolverTests
     {
         var result = _resolver.Resolve(format);
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
     }
 
     [Fact]
@@ -25,8 +25,8 @@ public class WeatherDataParserResolverTests
     {
         var result = _resolver.Resolve("csv");
 
-        Assert.True(result.IsError);
-        Assert.Equal(ErrorType.NotFound, result.TopError.Type);
+        result.IsError.Should().BeTrue();
+        result.TopError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -34,8 +34,8 @@ public class WeatherDataParserResolverTests
     {
         var result = _resolver.Resolve("xml");
 
-        Assert.True(result.IsSuccess);
-        Assert.IsType<XmlWeatherDataParser>(result.Value);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().BeOfType<XmlWeatherDataParser>();
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class WeatherDataParserResolverTests
 
         var formats = resolver.SupportedFormats.ToList();
 
-        Assert.Equal(3, formats.Count);
-        Assert.Contains("geojson", formats);
-        Assert.Contains("xml", formats);
+        formats.Should().HaveCount(3);
+        formats.Should().Contain("geojson");
+        formats.Should().Contain("xml");
     }
 }

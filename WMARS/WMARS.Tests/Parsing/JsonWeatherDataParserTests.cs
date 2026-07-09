@@ -9,15 +9,15 @@ public class JsonWeatherDataParserTests
 
     [Fact]
     public void SupportedFormats_Contains_Json() =>
-        Assert.Contains("json", _parser.SupportedFormats);
+        _parser.SupportedFormats.Should().Contain("json");
 
     [Fact]
     public void Parse_Valid_Json_Returns_Weather_Data()
     {
         var result = _parser.Parse("""{ "Location": "Amman", "Temperature": 23.5, "Humidity": 85 }""");
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(new WeatherData("Amman", 23.5, 85), result.Value);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new WeatherData("Amman", 23.5, 85));
     }
 
     [Fact]
@@ -25,8 +25,8 @@ public class JsonWeatherDataParserTests
     {
         var result = _parser.Parse("""{ "location": "Cairo", "temperature": 40, "humidity": 20 }""");
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(new WeatherData("Cairo", 40, 20), result.Value);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new WeatherData("Cairo", 40, 20));
     }
 
     [Fact]
@@ -34,9 +34,9 @@ public class JsonWeatherDataParserTests
     {
         var result = _parser.Parse("{ not valid");
 
-        Assert.True(result.IsError);
-        Assert.Equal(ErrorType.Validation, result.TopError.Type);
-        Assert.Contains("well-formed", result.TopError.Description);
+        result.IsError.Should().BeTrue();
+        result.TopError.Type.Should().Be(ErrorType.Validation);
+        result.TopError.Description.Should().Contain("well-formed");
     }
 
     [Theory]
@@ -47,7 +47,7 @@ public class JsonWeatherDataParserTests
     {
         var result = _parser.Parse(json);
 
-        Assert.True(result.IsError);
-        Assert.Contains(field, result.TopError.Description);
+        result.IsError.Should().BeTrue();
+        result.TopError.Description.Should().Contain(field);
     }
 }

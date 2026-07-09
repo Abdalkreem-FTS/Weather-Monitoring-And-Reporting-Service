@@ -16,15 +16,15 @@ public class ConfigurationLoaderTests
         {
             var result = await ConfigurationLoader.Load(path);
 
-            Assert.True(result.IsSuccess);
+            result.IsSuccess.Should().BeTrue();
 
             var config = result.Value;
-            Assert.True(config["RainBot"].Enabled);
-            Assert.Equal(70d, config["RainBot"].HumidityThreshold);
-            Assert.Equal("pour", config["RainBot"].Message);
+            config["RainBot"].Enabled.Should().BeTrue();
+            config["RainBot"].HumidityThreshold.Should().Be(70d);
+            config["RainBot"].Message.Should().Be("pour");
 
-            Assert.False(config["SunBot"].Enabled);
-            Assert.Equal(30d, config["SunBot"].TemperatureThreshold);
+            config["SunBot"].Enabled.Should().BeFalse();
+            config["SunBot"].TemperatureThreshold.Should().Be(30d);
         }
         finally
         {
@@ -39,8 +39,8 @@ public class ConfigurationLoaderTests
 
         var result = await ConfigurationLoader.Load(path);
 
-        Assert.True(result.IsError);
-        Assert.Equal(ErrorType.NotFound, result.TopError.Type);
+        result.IsError.Should().BeTrue();
+        result.TopError.Type.Should().Be(ErrorType.NotFound);
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class ConfigurationLoaderTests
         {
             var result = await ConfigurationLoader.Load(path);
 
-            Assert.True(result.IsError);
-            Assert.Equal(ErrorType.Validation, result.TopError.Type);
+            result.IsError.Should().BeTrue();
+            result.TopError.Type.Should().Be(ErrorType.Validation);
         }
         finally
         {

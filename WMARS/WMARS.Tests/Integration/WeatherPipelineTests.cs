@@ -31,9 +31,9 @@ public sealed class WeatherPipelineTests : IDisposable
         reporter.Verify(r => r.ReportActivation("SunBot", It.IsAny<string>()), Times.Never);
         reporter.Verify(r => r.ReportActivation("SnowBot", It.IsAny<string>()), Times.Never);
 
-        Assert.Empty(ui.Errors);
-        var reading = Assert.Single(ui.Received);
-        Assert.Equal(new WeatherData("London", 12, 85), reading);
+        ui.Errors.Should().BeEmpty();
+        ui.Received.Should().ContainSingle()
+            .Which.Should().Be(new WeatherData("London", 12, 85));
     }
 
     [Fact]
@@ -46,8 +46,8 @@ public sealed class WeatherPipelineTests : IDisposable
         reporter.Verify(r => r.ReportActivation("SunBot", "sun!"), Times.Once);
         reporter.Verify(r => r.ReportActivation("RainBot", It.IsAny<string>()), Times.Never);
 
-        Assert.Empty(ui.Errors);
-        Assert.Single(ui.Received);
+        ui.Errors.Should().BeEmpty();
+        ui.Received.Should().ContainSingle();
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public sealed class WeatherPipelineTests : IDisposable
 
         reporter.Verify(r => r.ReportActivation("RainBot", "rain!"), Times.Once);
         reporter.Verify(r => r.ReportActivation("SunBot", "sun!"), Times.Once);
-        Assert.Equal(2, ui.Received.Count);
-        Assert.Empty(ui.Errors);
+        ui.Received.Should().HaveCount(2);
+        ui.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -72,9 +72,8 @@ public sealed class WeatherPipelineTests : IDisposable
 
         var (reporter, ui) = RunPipeline(missing);
 
-        var error = Assert.Single(ui.Errors);
-        Assert.Contains("not found", error, StringComparison.OrdinalIgnoreCase);
-        Assert.Empty(ui.Received);
+        ui.Errors.Should().ContainSingle().Which.Should().ContainEquivalentOf("not found");
+        ui.Received.Should().BeEmpty();
         reporter.Verify(r => r.ReportActivation(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -85,9 +84,8 @@ public sealed class WeatherPipelineTests : IDisposable
 
         var (reporter, ui) = RunPipeline(path);
 
-        var error = Assert.Single(ui.Errors);
-        Assert.Contains("well-formed", error);
-        Assert.Empty(ui.Received);
+        ui.Errors.Should().ContainSingle().Which.Should().Contain("well-formed");
+        ui.Received.Should().BeEmpty();
         reporter.Verify(r => r.ReportActivation(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -99,8 +97,8 @@ public sealed class WeatherPipelineTests : IDisposable
 
         var (reporter, ui) = RunPipeline(missing, good);
 
-        Assert.Single(ui.Errors);
-        Assert.Single(ui.Received);
+        ui.Errors.Should().ContainSingle();
+        ui.Received.Should().ContainSingle();
         reporter.Verify(r => r.ReportActivation("SunBot", "sun!"), Times.Once);
     }
 

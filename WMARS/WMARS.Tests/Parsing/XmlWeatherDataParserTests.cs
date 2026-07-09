@@ -9,7 +9,7 @@ public class XmlWeatherDataParserTests
 
     [Fact]
     public void SupportedFormats_Contains_Xml() =>
-        Assert.Contains("xml", _parser.SupportedFormats);
+        _parser.SupportedFormats.Should().Contain("xml");
 
     [Fact]
     public void Parse_Valid_Multiline_Xml_Returns_Weather_Data()
@@ -23,8 +23,8 @@ public class XmlWeatherDataParserTests
 
         var result = _parser.Parse(xml);
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(new WeatherData("London", 12.0, 85.0), result.Value);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(new WeatherData("London", 12.0, 85.0));
     }
 
     [Fact]
@@ -32,9 +32,9 @@ public class XmlWeatherDataParserTests
     {
         var result = _parser.Parse("<WeatherData>");
 
-        Assert.True(result.IsError);
-        Assert.Equal(ErrorType.Validation, result.TopError.Type);
-        Assert.Contains("well-formed", result.TopError.Description);
+        result.IsError.Should().BeTrue();
+        result.TopError.Type.Should().Be(ErrorType.Validation);
+        result.TopError.Description.Should().Contain("well-formed");
     }
 
     [Fact]
@@ -44,8 +44,8 @@ public class XmlWeatherDataParserTests
 
         var result = _parser.Parse(xml);
 
-        Assert.True(result.IsError);
-        Assert.Contains("Temperature", result.TopError.Description);
+        result.IsError.Should().BeTrue();
+        result.TopError.Description.Should().Contain("Temperature");
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class XmlWeatherDataParserTests
 
         var result = _parser.Parse(xml);
 
-        Assert.True(result.IsError);
-        Assert.Contains("Temperature", result.TopError.Description);
+        result.IsError.Should().BeTrue();
+        result.TopError.Description.Should().Contain("Temperature");
     }
 }
