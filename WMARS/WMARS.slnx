@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="WMARS.Console/WMARS.Console.csproj" />
+  <Project Path="WMARS.Tests/WMARS.Tests.csproj" />
+</Solution>
