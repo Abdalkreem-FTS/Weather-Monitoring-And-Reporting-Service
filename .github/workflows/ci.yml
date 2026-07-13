@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -29,10 +27,4 @@ jobs:
         run: dotnet build ${{ env.SOLUTION }}
 
       - name: Run Tests
-        run: dotnet test ${{ env.SOLUTION }} --collect:"XPlat Code Coverage" --results-directory ./TestResults
-
-      - name: Check Code Coverage
-        if: github.event_name == 'pull_request'
-        run: |
-          python3 -m pip install --quiet diff-cover
-          diff-cover $(find TestResults -name 'coverage.cobertura.xml') --compare-branch=origin/${{ github.base_ref }} --fail-under=70
+        run: dotnet test ${{ env.SOLUTION }} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=70 /p:ThresholdType=method /p:ThresholdStat=total
