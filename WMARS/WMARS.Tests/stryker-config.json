@@ -1,0 +1,35 @@
+﻿{
+  "stryker-config": {
+    "mutation-level": "Complete",
+
+    "ignore-mutations": [
+      "string"
+    ],
+
+    "mutate": [
+      "**/*.cs",
+      "!**/Program.cs",
+      "!**/Reporting/SpectreConsoleUi.cs",
+      "!**/obj/**",
+      "!**/bin/**",
+      "!**/*.Generated.cs",
+      "!**/*.g.cs",
+      "!**/*.g.i.cs",
+      "!**/*.Designer.cs"
+    ],
+
+    "reporters": [
+      "html",
+      "json",
+      "progress"
+    ],
+
+    "thresholds": {
+      "high": 85,
+      "low": 75,
+      "break": 70
+    },
+
+    "additional-timeout": 10000
+  }
+}
