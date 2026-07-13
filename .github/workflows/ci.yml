@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop, tests ]
+  push:
+    branches: [ main, develop, tests ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION: WMARS/WMARS.slnx
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION }}
+
+      - name: Run Tests
+        run: dotnet test ${{ env.SOLUTION }} /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=70 /p:ThresholdType=method /p:ThresholdStat=total
